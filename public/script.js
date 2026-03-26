@@ -5,12 +5,12 @@ let isStreaming = false;
 let systemPrompt = '';
 
 const modelIcons = {
-    'geningai/gpt-3': '🤖',
+    'geningai/gpt3': '🤖',
     'geningai/llama-roleplay': '🦙'
 };
 
 const modelNames = {
-    'geningai/gpt-3': 'GPT-3',
+    'geningai/gpt3': 'GPT-3',
     'geningai/llama-roleplay': 'LLaMA'
 };
 
