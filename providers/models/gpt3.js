@@ -29,11 +29,15 @@ class GPT3Model {
         }
       );
 
-      await this.uidManager.handleResponseDone();
-
       if (response.data.code !== 0) {
+        if (response.data.code === 100002) {
+          this.uidManager.running = null;
+          this.uidManager.requestsUsed = this.uidManager.maxRequestsPerUID;
+        }
         throw new Error(response.data.message || 'API Error');
       }
+
+      await this.uidManager.handleResponseDone();
 
       const text = response.data.data.result;
       return this.formatResponse(text);

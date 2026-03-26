@@ -96,9 +96,19 @@ class LlamaRoleplayModel {
               continue;
             }
             
-            try {
+              try {
               const data = JSON.parse(dataStr);
               console.log('[LlamaRoleplay] Event:', data.event, ', answer:', data.answer?.substring(0, 30));
+              
+              if (data.event === 'error') {
+                console.error('[LlamaRoleplay] API Error:', data.message);
+                if (data.code === 100002) {
+                  this.uidManager.running = null;
+                  this.uidManager.requestsUsed = this.uidManager.maxRequestsPerUID;
+                }
+                reject(new Error(data.message || 'API Error'));
+                return;
+              }
               
               if (data.event === 'message' && data.answer) {
                 fullText += data.answer;
