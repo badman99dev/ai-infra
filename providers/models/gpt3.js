@@ -32,7 +32,7 @@ class GPT3Model {
       if (response.data.code !== 0) {
         if (response.data.code === 100002) {
           this.uidManager.running = null;
-          this.uidManager.requestsUsed = this.uidManager.maxRequestsPerUID;
+          this.uidManager.requestsUsed = 10;
         }
         throw new Error(response.data.message || 'API Error');
       }

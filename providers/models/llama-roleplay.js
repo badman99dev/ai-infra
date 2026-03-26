@@ -103,8 +103,8 @@ class LlamaRoleplayModel {
               if (data.event === 'error') {
                 console.error('[LlamaRoleplay] API Error:', data.message);
                 if (data.code === 100002) {
-                  this.uidManager.running = null;
-                  this.uidManager.requestsUsed = this.uidManager.maxRequestsPerUID;
+                  running = null;
+                  requestsUsed = 10;
                 }
                 reject(new Error(data.message || 'API Error'));
                 return;
