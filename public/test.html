@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow: auto; max-height: 400px; }
+        .result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>API Test Tool</h1>
+    
+    <h2>Test GPT-3 (Non-Streaming)</h2>
+    <input type="text" id="gpt3Input" value="Hello" style="width: 300px; padding: 8px;">
+    <button onclick="testGPT3()">Send</button>
+    <pre id="gpt3Result">Result will appear here...</pre>
+    
+    <h2>Test LLaMA (Streaming)</h2>
+    <input type="text" id="llamaInput" value="Hello" style="width: 300px; padding: 8px;">
+    <button onclick="testLlama()">Send</button>
+    <pre id="llamaResult">Result will appear here...</pre>
+
+    <script>
+        const API_URL = 'https://ai-infra-orcin.vercel.app/v1/chat/completions';
+
+        async function testGPT3() {
+            const resultEl = document.getElementById('gpt3Result');
+            const input = document.getElementById('gpt3Input').value;
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'geningai/gpt3',
+                        messages: [{ role: 'user', content: input }],
+                        stream: false
+                    })
+                });
+                
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testLlama() {
+            const resultEl = document.getElementById('llamaResult');
+            const input = document.getElementById('llamaInput').value;
+            resultEl.textContent = 'Loading (streaming)...';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'geningai/llama-roleplay',
+                        messages: [{ role: 'user', content: input }],
+                        stream: true
+                    })
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    result += decoder.decode(value);
+                }
+                
+                resultEl.textContent = result;
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
