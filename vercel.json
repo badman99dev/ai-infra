@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/v1/chat/completions",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/v1/(.*)",
+      "dest": "/api/index.js"
+    }
+  ]
+}

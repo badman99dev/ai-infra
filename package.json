@@ -1,0 +1,16 @@
+{
+  "name": "ai-infra",
+  "version": "1.0.0",
+  "description": "OpenAI-compatible API for Gening AI",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}
