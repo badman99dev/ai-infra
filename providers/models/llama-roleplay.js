@@ -11,7 +11,11 @@ class LlamaRoleplayModel {
   }
 
   async generate(messages, options = {}) {
+    console.log('[LlamaRoleplay] ===== START =====');
+    console.log('[LlamaRoleplay] Getting credentials...');
+    
     const credentials = this.uidManager.getRunningCredentials();
+    console.log('[LlamaRoleplay] Using UID:', credentials.uid);
     
     const payload = {
       inputs: {
@@ -20,6 +24,9 @@ class LlamaRoleplayModel {
       query: messages[messages.length - 1].content,
       messages: this.formatMessages(messages)
     };
+
+    console.log('[LlamaRoleplay] Payload:', JSON.stringify(payload).substring(0, 200));
+    console.log('[LlamaRoleplay] Calling Gening AI API...');
 
     try {
       const response = await axios.post(
@@ -30,15 +37,22 @@ class LlamaRoleplayModel {
             'Content-Type': 'application/json',
             'Cookie': credentials.cookie
           },
-          timeout: 60000,
+          timeout: 90000,
           responseType: 'stream'
         }
       );
 
+      console.log('[LlamaRoleplay] Response status:', response.status);
+      console.log('[LlamaRoleplay] Response headers:', JSON.stringify(response.headers).substring(0, 100));
+      
       return this.formatStreamResponse(response.data, options.onChunk);
 
     } catch (error) {
       console.error('[LlamaRoleplay] Error:', error.message);
+      if (error.response) {
+        console.error('[LlamaRoleplay] Response status:', error.response.status);
+        console.error('[LlamaRoleplay] Response data:', error.response.data?.substring?.(0, 200) || error.response.data);
+      }
       throw error;
     }
   }
@@ -51,30 +65,43 @@ class LlamaRoleplayModel {
         content: messages[i].content
       });
     }
+    console.log('[LlamaRoleplay] Formatted messages:', JSON.stringify(formatted).substring(0, 200));
     return formatted;
   }
 
   formatStreamResponse(stream, onChunk) {
+    console.log('[LlamaRoleplay] Starting stream processing...');
     let fullText = '';
-    let chunks = [];
     let chunkCount = 0;
+    let firstChunk = true;
 
     return new Promise((resolve, reject) => {
       stream.on('data', (chunk) => {
-        const lines = chunk.toString().split('\n');
+        const chunkStr = chunk.toString();
+        console.log('[LlamaRoleplay] Received chunk, length:', chunkStr.length);
+        
+        const lines = chunkStr.split('\n');
         
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6);
-            if (dataStr === '{}' || !dataStr.trim()) continue;
+            if (dataStr === '{}' || !dataStr.trim()) {
+              console.log('[LlamaRoleplay] Skipping empty data');
+              continue;
+            }
             
             try {
               const data = JSON.parse(dataStr);
+              console.log('[LlamaRoleplay] Event:', data.event, ', answer:', data.answer?.substring(0, 30));
               
               if (data.event === 'message' && data.answer) {
                 fullText += data.answer;
                 chunkCount++;
-                chunks.push(data.answer);
+                
+                if (firstChunk) {
+                  console.log('[LlamaRoleplay] First content chunk:', data.answer.substring(0, 50));
+                  firstChunk = false;
+                }
                 
                 if (onChunk) {
                   onChunk({
@@ -88,17 +115,23 @@ class LlamaRoleplayModel {
               }
               
               if (data.event === 'message_end') {
+                console.log('[LlamaRoleplay] Message end event, handling response done');
                 this.uidManager.handleResponseDone();
               }
               
             } catch (e) {
-              // Skip invalid JSON
+              console.log('[LlamaRoleplay] JSON parse error:', e.message, 'data:', dataStr.substring(0, 50));
             }
           }
         }
       });
 
       stream.on('end', () => {
+        console.log('[LlamaRoleplay] Stream ended');
+        console.log('[LlamaRoleplay] Total chunks received:', chunkCount);
+        console.log('[LlamaRoleplay] Total content length:', fullText.length);
+        console.log('[LlamaRoleplay] Content preview:', fullText.substring(0, 100));
+        
         resolve({
           id: `geningai-${Date.now()}`,
           object: 'chat.completion',
@@ -120,7 +153,10 @@ class LlamaRoleplayModel {
         });
       });
 
-      stream.on('error', reject);
+      stream.on('error', (err) => {
+        console.error('[LlamaRoleplay] Stream error:', err.message);
+        reject(err);
+      });
     });
   }
 }
