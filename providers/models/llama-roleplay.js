@@ -65,6 +65,12 @@ class LlamaRoleplayModel {
         content: messages[i].content
       });
     }
+    
+    // If no history, add a starter message
+    if (formatted.length === 0) {
+      formatted.push({ role: 'user', content: 'Hi' });
+    }
+    
     console.log('[LlamaRoleplay] Formatted messages:', JSON.stringify(formatted).substring(0, 200));
     return formatted;
   }
