@@ -1,102 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat - Gening AI</title>
-    <link rel="stylesheet" href="/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeningAI Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h1 class="logo">
-                    <span class="logo-icon">✨</span>
-                    AI Chat
-                </h1>
-                <button class="new-chat-btn" onclick="startNewChat()">
-                    <span>+</span> New Chat
-                </button>
-            </div>
-            
-            <div class="model-selector">
-                <label class="selector-label">Select Model</label>
-                <select id="modelSelect" class="model-dropdown">
-                    <option value="geningai/gpt3">🤖 GPT-3 (General)</option>
-                    <option value="geningai/llama-roleplay">🦙 LLaMA (Roleplay)</option>
-                </select>
-            </div>
-            
-            <div class="system-prompt-section">
-                <label class="selector-label">System Prompt</label>
-                <textarea id="systemPrompt" class="system-input" placeholder="You are a helpful assistant..."></textarea>
-                <button class="apply-btn" onclick="applySystemPrompt()">Apply</button>
-            </div>
-            
-            <div class="sidebar-footer">
-                <div class="credits-info">
-                    <span class="credits-label">Credits:</span>
-                    <span class="credits-value" id="creditsDisplay">--</span>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Mobile toggle -->
-        <button class="sidebar-toggle" onclick="toggleSidebar()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 12h18M3 6h18M3 18h18"/>
-            </svg>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-orb"></div>
+          <span class="brand-name">GeningAI</span>
+        </div>
+        <button class="new-chat-btn" id="newChatBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          New Chat
         </button>
+      </div>
 
-        <!-- Main Chat Area -->
-        <main class="chat-main">
-            <!-- Chat Header -->
-            <header class="chat-header">
-                <div class="current-model" id="currentModelDisplay">
-                    <span class="model-icon">🤖</span>
-                    <span class="model-name">GPT-3</span>
-                </div>
-            </header>
-
-            <!-- Messages Container -->
-            <div class="messages-container" id="messagesContainer">
-                <div class="welcome-message">
-                    <div class="welcome-icon">✨</div>
-                    <h2>Welcome to AI Chat</h2>
-                    <p>Select a model and start chatting</p>
-                    <div class="quick-prompts">
-                        <button onclick="sendQuickPrompt('Hello! How are you?')">Say Hello</button>
-                        <button onclick="sendQuickPrompt('Write a Python function')">Write Code</button>
-                        <button onclick="sendQuickPrompt('Tell me a joke')">Tell a Joke</button>
-                    </div>
-                </div>
+      <div class="sidebar-section">
+        <div class="section-label">Model</div>
+        <div class="model-cards">
+          <div class="model-card active" data-model="geningai/gpt3" id="cardGpt3">
+            <div class="model-card-icon">⚡</div>
+            <div class="model-card-info">
+              <div class="model-card-name">GPT-3</div>
+              <div class="model-card-desc">Fast · General</div>
             </div>
-
-            <!-- Input Area -->
-            <div class="input-container">
-                <div class="input-wrapper">
-                    <textarea 
-                        id="messageInput" 
-                        placeholder="Type your message..."
-                        rows="1"
-                        onkeydown="handleKeyDown(event)"
-                        oninput="autoResize(this)"
-                    ></textarea>
-                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                        </svg>
-                    </button>
-                </div>
-                <p class="disclaimer">AI responses are generated by Gening AI</p>
+            <div class="model-card-check">✓</div>
+          </div>
+          <div class="model-card" data-model="geningai/llama-roleplay" id="cardLlama">
+            <div class="model-card-icon">🦙</div>
+            <div class="model-card-info">
+              <div class="model-card-name">LLaMA</div>
+              <div class="model-card-desc">Stream · Roleplay</div>
             </div>
-        </main>
+            <div class="model-card-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="personaSection" style="display:none">
+        <div class="section-label">Persona <span class="label-tag">LLaMA</span></div>
+        <div class="persona-grid" id="personaGrid">
+          <button class="persona-btn active" data-persona="default">🙂 Default</button>
+          <button class="persona-btn" data-persona="storyteller">📖 Storyteller</button>
+          <button class="persona-btn" data-persona="friend">🤝 Best Friend</button>
+          <button class="persona-btn" data-persona="teacher">🎓 Teacher</button>
+          <button class="persona-btn" data-persona="philosopher">🧠 Philosopher</button>
+          <button class="persona-btn" data-persona="comedian">😂 Comedian</button>
+          <button class="persona-btn" data-persona="poet">✍️ Poet</button>
+          <button class="persona-btn" data-persona="custom">⚙️ Custom</button>
+        </div>
+        <textarea class="custom-persona-input" id="customPersonaInput" placeholder="Describe custom persona..." style="display:none"></textarea>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">System Prompt</div>
+        <textarea class="system-textarea" id="systemPrompt" placeholder="You are a helpful assistant..."></textarea>
+        <button class="apply-btn" id="applyBtn">Apply</button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="footer-info">Powered by Gening AI</div>
+      </div>
+    </aside>
+
+    <div class="mobile-bar">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <span class="mobile-brand">GeningAI</span>
+      <button class="mobile-new-btn" id="mobileNewBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
     </div>
 
-    <script src="/script.js"></script>
+    <main class="main">
+      <div class="chat-header">
+        <div class="active-model-pill" id="activeModelPill">
+          <span class="pill-icon">⚡</span>
+          <span class="pill-name">GPT-3</span>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" id="clearBtn" title="Clear chat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="welcome-orb"></div>
+          <h1 class="welcome-title">What can I help with?</h1>
+          <p class="welcome-sub">Ask anything — code, ideas, stories, math</p>
+          <div class="quick-chips">
+            <button class="chip" data-prompt="Explain quantum entanglement simply">⚛️ Quantum physics</button>
+            <button class="chip" data-prompt="Write a Python web scraper">🐍 Python script</button>
+            <button class="chip" data-prompt="Tell me a short sci-fi story">🚀 Sci-fi story</button>
+            <button class="chip" data-prompt="What is e^(i*pi) + 1 = 0 and why is it beautiful?">∑ Math magic</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="file-preview" id="filePreview" style="display:none">
+          <div class="file-preview-inner">
+            <span class="file-icon">📄</span>
+            <span class="file-name" id="fileName"></span>
+            <button class="file-remove" id="fileRemove">✕</button>
+          </div>
+        </div>
+        <div class="input-box">
+          <label class="attach-btn" title="Attach text file (max 200kb)">
+            <input type="file" id="fileInput" accept=".txt,.md,.py,.js,.ts,.jsx,.tsx,.html,.css,.json,.xml,.csv,.yaml,.yml,.sh,.sql,.c,.cpp,.java,.go,.rs,.rb,.php" style="display:none" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </label>
+          <textarea id="msgInput" placeholder="Message GeningAI..." rows="1"></textarea>
+          <button class="send-btn" id="sendBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <div class="input-footer">GeningAI can make mistakes. Verify important info.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <script src="/script.js"></script>
 </body>
 </html>
