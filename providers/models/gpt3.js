@@ -30,11 +30,16 @@ class GPT3Model {
       );
 
       if (response.data.code !== 0) {
-        if (response.data.code === 100002) {
+        const msg = response.data.message || 'API Error';
+        const isCredentialError = response.data.code === 100002 ||
+          /credit|score|lack|quota|limit|expired|invalid/i.test(msg);
+        if (isCredentialError) {
+          console.warn('[GPT3] Credential/credit error, rotating UID:', msg);
           this.uidManager.running = null;
           this.uidManager.requestsUsed = 10;
+          this.uidManager.handleResponseDone().catch(() => {});
         }
-        throw new Error(response.data.message || 'API Error');
+        throw new Error(msg);
       }
 
       await this.uidManager.handleResponseDone();
