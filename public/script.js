@@ -86,17 +86,19 @@ async function sendMessage() {
             // --- STREAMING (SSE) MODE --- e.g. llama-roleplay
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let pendingUpdate = null;
-
-            const flushUpdate = () => {
-                if (pendingUpdate !== null) {
+            // rAF-based streaming: accumulate chars, paint only on screen refresh
+            let rafScheduled = false;
+            const scheduleRender = () => {
+                if (rafScheduled) return;
+                rafScheduled = true;
+                requestAnimationFrame(() => {
                     if (!messageDiv) {
                         messageDiv = createAIMessage(aiResponse);
                     } else {
                         updateAIMessage(messageDiv, aiResponse);
                     }
-                    pendingUpdate = null;
-                }
+                    rafScheduled = false;
+                });
             };
 
             while (true) {
@@ -116,18 +118,18 @@ async function sendMessage() {
                             const content = json.choices[0]?.delta?.content;
                             if (content) {
                                 aiResponse += content;
-                                // Batch: flush on space/punctuation or every 5 chars
-                                if (/[\s।,.!?]/.test(content) || aiResponse.length % 5 === 0) {
-                                    flushUpdate();
-                                } else {
-                                    pendingUpdate = true;
-                                }
+                                scheduleRender();
                             }
                         } catch (e) {}
                     }
                 }
             }
-            flushUpdate(); // Final flush
+            // Final paint to make sure last chars show
+            if (!messageDiv) {
+                messageDiv = createAIMessage(aiResponse);
+            } else {
+                updateAIMessage(messageDiv, aiResponse);
+            }
         } else {
             // --- NON-STREAMING (JSON) MODE --- e.g. gpt3
             const json = await response.json();
