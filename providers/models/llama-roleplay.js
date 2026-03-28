@@ -10,7 +10,8 @@ class LlamaRoleplayModel {
     this.characterId = '2e6cd507-dd9c-4f2c-add1-8551a944da95';
   }
 
-  async generate(messages, options = {}) {
+  async generate(messages, options = {}, retryCount = 0) {
+    const MAX_RETRIES = 2;
     console.log('[LlamaRoleplay] ===== START =====');
     console.log('[LlamaRoleplay] Getting credentials...');
     
@@ -49,6 +50,11 @@ class LlamaRoleplayModel {
 
     } catch (error) {
       console.error('[LlamaRoleplay] Error:', error.message);
+      if (error.isCredentialError && retryCount < MAX_RETRIES) {
+        console.warn(`[LlamaRoleplay] Credential error, force rotating and retrying (${retryCount + 1}/${MAX_RETRIES})`);
+        await this.uidManager.forceRotate();
+        return this.generate(messages, options, retryCount + 1);
+      }
       if (error.response) {
         console.error('[LlamaRoleplay] Response status:', error.response.status);
         console.error('[LlamaRoleplay] Response data:', error.response.data?.substring?.(0, 200) || error.response.data);
@@ -109,12 +115,17 @@ class LlamaRoleplayModel {
               console.log('[LlamaRoleplay] Event:', data.event, ', answer:', data.answer?.substring(0, 30));
               
               if (data.event === 'error') {
-                console.error('[LlamaRoleplay] API Error:', data.message);
-                if (data.code === 100002) {
-                  running = null;
-                  requestsUsed = 10;
+                const msg = data.message || 'API Error';
+                console.error('[LlamaRoleplay] API Error:', msg);
+                const isCredentialError = data.code === 100002 ||
+                  /credit|score|lack|quota|limit|expired|invalid/i.test(msg);
+                if (isCredentialError) {
+                  const err = new Error(msg);
+                  err.isCredentialError = true;
+                  reject(err);
+                } else {
+                  reject(new Error(msg));
                 }
-                reject(new Error(data.message || 'API Error'));
                 return;
               }
               
