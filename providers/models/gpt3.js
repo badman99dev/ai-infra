@@ -36,10 +36,8 @@ class GPT3Model {
           /credit|score|lack|quota|limit|expired|invalid/i.test(msg);
 
         if (isCredentialError && retryCount < MAX_RETRIES) {
-          console.warn(`[GPT3] Credential error, rotating UID and retrying (${retryCount + 1}/${MAX_RETRIES}):, msg`);
-          this.uidManager.running = null;
-          this.uidManager.requestsUsed = 10;
-          await this.uidManager.handleResponseDone();
+          console.warn(`[GPT3] Credential error, force rotating UID and retrying (${retryCount + 1}/${MAX_RETRIES}): ${msg}`);
+          await this.uidManager.forceRotate();
           return this.generate(messages, options, retryCount + 1);
         }
 
