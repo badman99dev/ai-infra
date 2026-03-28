@@ -9,7 +9,8 @@ class GPT3Model {
     this.supportsStreaming = false;
   }
 
-  async generate(messages, options = {}) {
+  async generate(messages, options = {}, retryCount = 0) {
+    const MAX_RETRIES = 2;
     const credentials = this.uidManager.getRunningCredentials();
     
     const payload = {
@@ -33,12 +34,15 @@ class GPT3Model {
         const msg = response.data.message || 'API Error';
         const isCredentialError = response.data.code === 100002 ||
           /credit|score|lack|quota|limit|expired|invalid/i.test(msg);
-        if (isCredentialError) {
-          console.warn('[GPT3] Credential/credit error, rotating UID:', msg);
+
+        if (isCredentialError && retryCount < MAX_RETRIES) {
+          console.warn(`[GPT3] Credential error, rotating UID and retrying (${retryCount + 1}/${MAX_RETRIES}):, msg`);
           this.uidManager.running = null;
           this.uidManager.requestsUsed = 10;
-          this.uidManager.handleResponseDone().catch(() => {});
+          await this.uidManager.handleResponseDone();
+          return this.generate(messages, options, retryCount + 1);
         }
+
         throw new Error(msg);
       }
 
