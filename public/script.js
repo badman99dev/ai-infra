@@ -86,6 +86,18 @@ async function sendMessage() {
             // --- STREAMING (SSE) MODE --- e.g. llama-roleplay
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let pendingUpdate = null;
+
+            const flushUpdate = () => {
+                if (pendingUpdate !== null) {
+                    if (!messageDiv) {
+                        messageDiv = createAIMessage(aiResponse);
+                    } else {
+                        updateAIMessage(messageDiv, aiResponse);
+                    }
+                    pendingUpdate = null;
+                }
+            };
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -104,16 +116,18 @@ async function sendMessage() {
                             const content = json.choices[0]?.delta?.content;
                             if (content) {
                                 aiResponse += content;
-                                if (!messageDiv) {
-                                    messageDiv = createAIMessage(content);
+                                // Batch: flush on space/punctuation or every 5 chars
+                                if (/[\s।,.!?]/.test(content) || aiResponse.length % 5 === 0) {
+                                    flushUpdate();
                                 } else {
-                                    updateAIMessage(messageDiv, aiResponse);
+                                    pendingUpdate = true;
                                 }
                             }
                         } catch (e) {}
                     }
                 }
             }
+            flushUpdate(); // Final flush
         } else {
             // --- NON-STREAMING (JSON) MODE --- e.g. gpt3
             const json = await response.json();

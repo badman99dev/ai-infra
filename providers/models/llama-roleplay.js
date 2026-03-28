@@ -80,23 +80,31 @@ class LlamaRoleplayModel {
     let fullText = '';
     let chunkCount = 0;
     let firstChunk = true;
+    let lineBuffer = ''; // Buffer for partial lines across TCP chunks
 
     return new Promise((resolve, reject) => {
       stream.on('data', (chunk) => {
         const chunkStr = chunk.toString();
         console.log('[LlamaRoleplay] Received chunk, length:', chunkStr.length);
         
-        const lines = chunkStr.split('\n');
+        // Prepend any leftover partial line from previous chunk
+        const incoming = lineBuffer + chunkStr;
+        lineBuffer = '';
+
+        const lines = incoming.split('\n');
+
+        // Last element may be incomplete — save it for next chunk
+        lineBuffer = lines.pop();
         
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '{}' || !dataStr.trim()) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === '{}' || !dataStr) {
               console.log('[LlamaRoleplay] Skipping empty data');
               continue;
             }
             
-              try {
+            try {
               const data = JSON.parse(dataStr);
               console.log('[LlamaRoleplay] Event:', data.event, ', answer:', data.answer?.substring(0, 30));
               
