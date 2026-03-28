@@ -77,42 +77,52 @@ async function sendMessage() {
         }
         
         removeTypingIndicator();
-        
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+
+        const contentType = response.headers.get('content-type') || '';
         let aiResponse = '';
         let messageDiv = null;
-        
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-            
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
-                    if (data === '[DONE]') continue;
-                    
-                    try {
-                        const json = JSON.parse(data);
-                        const content = json.choices[0]?.delta?.content;
-                        if (content) {
-                            aiResponse += content;
-                            
-                            // Update or create message
-                            if (!messageDiv) {
-                                messageDiv = createAIMessage(content);
-                            } else {
-                                updateAIMessage(messageDiv, aiResponse);
+
+        if (contentType.includes('text/event-stream')) {
+            // --- STREAMING (SSE) MODE --- e.g. llama-roleplay
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6).trim();
+                        if (data === '[DONE]') continue;
+
+                        try {
+                            const json = JSON.parse(data);
+                            const content = json.choices[0]?.delta?.content;
+                            if (content) {
+                                aiResponse += content;
+                                if (!messageDiv) {
+                                    messageDiv = createAIMessage(content);
+                                } else {
+                                    updateAIMessage(messageDiv, aiResponse);
+                                }
                             }
-                        }
-                    } catch (e) {}
+                        } catch (e) {}
+                    }
                 }
             }
+        } else {
+            // --- NON-STREAMING (JSON) MODE --- e.g. gpt3
+            const json = await response.json();
+            aiResponse = json.choices[0]?.message?.content || '';
+            if (aiResponse) {
+                messageDiv = createAIMessage(aiResponse);
+            }
         }
-        
+
         // Add to messages array
         messages.push({ role: 'assistant', content: aiResponse });
         
